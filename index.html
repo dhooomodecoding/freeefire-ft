@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FF Tournament Score</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --ink:#0C0C0C; --paper:#F4F2ED; --cream:#EDEAE2;
+  --stone:#C2BDB4; --fog:#8A8680; --mist:#D8D4CC;
+  --line:rgba(12,12,12,0.10); --line2:rgba(12,12,12,0.05);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:680px;margin:0 auto;padding:0 20px 100px;}
+@keyframes dn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pg{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.mast{border-bottom:1px solid var(--line);padding:44px 0 32px;margin-bottom:44px;animation:dn .8s cubic-bezier(.16,1,.3,1) both;}
+.eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--fog);margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.eyebrow::after{content:'';flex:1;height:1px;background:var(--mist);}
+h1{font-family:'Playfair Display',serif;font-size:clamp(40px,10vw,78px);font-weight:900;line-height:.92;letter-spacing:-1px;margin-bottom:18px;}
+h1 em{font-style:italic;font-weight:400;color:var(--fog);}
+.mast-sub{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--fog);}
+.rules{margin-bottom:44px;animation:up .6s .1s cubic-bezier(.16,1,.3,1) both;}
+.sec-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--fog);margin-bottom:12px;}
+.rtable{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--line);}
+.rc{border-right:1px solid var(--line);padding:10px 6px;text-align:center;transition:background .2s;}
+.rc:last-child{border-right:none;}
+.rc:hover{background:var(--cream);}
+.rc-t{font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);letter-spacing:1px;}
+.rc-p{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1.1;}
+.rc-p.z{color:var(--stone);}
+.knote{border:1px solid var(--line);border-top:none;padding:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--fog);text-align:center;letter-spacing:1.5px;}
+.knote strong{color:var(--ink);}
+.nav{display:flex;border-bottom:1px solid var(--line);margin-bottom:36px;animation:up .6s .2s cubic-bezier(.16,1,.3,1) both;}
+.nb{flex:1;padding:13px 0;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--fog);background:none;border:none;cursor:pointer;position:relative;transition:color .3s;}
+.nb::after{content:'';position:absolute;bottom:-1px;left:50%;right:50%;height:1px;background:var(--ink);transition:left .4s cubic-bezier(.16,1,.3,1),right .4s cubic-bezier(.16,1,.3,1);}
+.nb.active{color:var(--ink);}
+.nb.active::after{left:0;right:0;}
+.nb:hover{color:var(--ink);}
+.page{display:none;}
+.page.active{display:block;animation:pg .45s cubic-bezier(.16,1,.3,1) both;}
+.page.fl{animation:pgl .45s cubic-bezier(.16,1,.3,1) both;}
+@keyframes pgl{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+.uzone{border:1px dashed var(--stone);padding:44px 20px;text-align:center;cursor:pointer;transition:all .3s;margin-bottom:18px;position:relative;overflow:hidden;}
+.uzone::after{content:'';position:absolute;inset:0;background:var(--cream);opacity:0;transition:opacity .3s;}
+.uzone:hover::after,.uzone.drag::after{opacity:1;}
+.uzone:hover,.uzone.drag{border-color:var(--ink);border-style:solid;}
+.ui{font-size:30px;display:block;margin-bottom:12px;position:relative;z-index:1;}
+.ubig{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:4px;position:relative;z-index:1;}
+.usml{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--fog);position:relative;z-index:1;}
+#fi{display:none;}
+.previmg{max-width:100%;max-height:280px;display:block;margin:0 auto;border:1px solid var(--line);}
+.ctrl{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line2);}
+.clbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--fog);letter-spacing:2px;white-space:nowrap;}
+select{flex:1;background:transparent;border:none;border-bottom:1px solid var(--line);color:var(--ink);padding:8px 4px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px;outline:none;cursor:pointer;-webkit-appearance:none;}
+select:focus{border-color:var(--ink);}
+.btn{width:100%;padding:15px;background:var(--ink);color:var(--paper);border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:4px;text-transform:uppercase;transition:all .3s;position:relative;overflow:hidden;margin-bottom:18px;}
+.btn::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.08);transform:translateX(-100%);transition:transform .4s cubic-bezier(.16,1,.3,1);}
+.btn:hover::before{transform:translateX(0);}
+.btn:hover{letter-spacing:5px;}
+.btn:disabled{opacity:.2;cursor:not-allowed;letter-spacing:4px;}
+.btn-sec{background:transparent;border:1px solid var(--line);color:var(--fog);padding:8px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;transition:all .2s;}
+.btn-sec:hover{border-color:var(--ink);color:var(--ink);}
+.load{display:none;margin-bottom:18px;text-align:center;}
+.load.show{display:block;}
+.ltrack{height:1px;background:var(--mist);overflow:hidden;margin-bottom:10px;}
+.lrun{height:100%;background:var(--ink);animation:runner 1.6s ease-in-out infinite;}
+@keyframes runner{0%{width:0%;margin-left:0%}60%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+.ltxt{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--fog);animation:pulse 1.4s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.errb{display:none;padding:14px 16px;margin-bottom:18px;border-left:2px solid var(--ink);background:var(--cream);font-family:'DM Mono',monospace;font-size:11px;color:var(--fog);line-height:1.9;white-space:pre-line;}
+.errb.show{display:block;animation:up .3s ease both;}
+.rn{display:none;padding:10px 14px;margin-bottom:14px;background:var(--cream);border:1px solid var(--line);font-family:'DM Mono',monospace;font-size:11px;color:var(--fog);text-align:center;}
+.rn.show{display:block;}
+.aipanel{display:none;border:1px solid var(--line);margin-bottom:18px;}
+.aipanel.show{display:block;animation:up .4s cubic-bezier(.16,1,.3,1) both;}
+.aihead{display:flex;justify-content:space-between;align-items:baseline;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--cream);}
+.aihead-t{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;}
+.aihead-b{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--fog);}
+.sr{display:grid;grid-template-columns:46px 1fr 68px 52px;gap:8px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line2);transition:background .15s;}
+.sr:last-child{border-bottom:none;}
+.sr:hover{background:var(--cream);}
+.sr-pl{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;line-height:1;color:var(--stone);}
+.sr-pl.top{color:var(--ink);}
+.sr-name{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;}
+.sr-mem{font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sr-kl{font-family:'DM Mono',monospace;font-size:11px;color:var(--fog);text-align:center;}
+.sr-kl strong{display:block;font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink);}
+.sr-pt{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;text-align:right;}
+.sr-pt small{display:block;font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);letter-spacing:1px;}
+.btn-save{width:100%;padding:14px;background:var(--ink);color:var(--paper);border:none;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:4px;cursor:pointer;transition:all .25s;}
+.btn-save:hover{opacity:.8;letter-spacing:5px;}
+.mansec{display:none;border:1px solid var(--line);padding:22px;margin-bottom:18px;}
+.mansec.show{display:block;animation:up .4s ease both;}
+.man-t{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:4px;}
+.man-s{font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);margin-bottom:18px;letter-spacing:1px;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fg label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--fog);}
+input[type=text],input[type=number]{background:transparent;border:none;border-bottom:1px solid var(--line);color:var(--ink);padding:8px 4px;font-family:'DM Mono',monospace;font-size:13px;outline:none;width:100%;transition:border-color .2s;}
+input:focus{border-color:var(--ink);}
+.man-prev{padding:10px 0;font-family:'DM Mono',monospace;font-size:12px;color:var(--fog);letter-spacing:1px;border-top:1px solid var(--line2);margin-bottom:14px;}
+.btn-man{padding:12px 22px;background:transparent;border:1px solid var(--ink);color:var(--ink);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;cursor:pointer;transition:all .25s;}
+.btn-man:hover{background:var(--ink);color:var(--paper);}
+hr{border:none;border-top:1px solid var(--line);margin:28px 0;}
+.lbhead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:26px;}
+.lbhead-t{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;}
+.tent{border-bottom:1px solid var(--line);overflow:hidden;animation:up .4s cubic-bezier(.16,1,.3,1) both;}
+.tent:nth-child(1){animation-delay:.03s}.tent:nth-child(2){animation-delay:.06s}.tent:nth-child(3){animation-delay:.09s}.tent:nth-child(n+4){animation-delay:.12s}
+.tehead{display:grid;grid-template-columns:54px 1fr auto 18px;gap:10px;align-items:center;padding:18px 0;cursor:pointer;transition:opacity .2s;}
+.tehead:hover{opacity:.65;}
+.te-rk{font-family:'Playfair Display',serif;font-weight:900;font-size:36px;line-height:1;color:var(--stone);}
+.te-rk.r1{color:var(--ink);font-size:42px;}.te-rk.r2{color:#555;}.te-rk.r3{color:#888;}
+.te-inf .te-nm{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;}
+.te-inf .te-sb{font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);margin-top:3px;}
+.te-sc .big{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;line-height:1;text-align:right;}
+.te-sc .lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);letter-spacing:2px;text-align:right;}
+.tearr{font-size:10px;color:var(--stone);transition:transform .35s cubic-bezier(.16,1,.3,1);}
+.tearr.open{transform:rotate(180deg);}
+.tebody{display:none;background:var(--cream);margin:0 -20px;padding:0 20px;}
+.tebody.open{display:block;animation:bodyopen .35s cubic-bezier(.16,1,.3,1) both;}
+@keyframes bodyopen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.mr{display:grid;grid-template-columns:64px 1fr 46px 28px;gap:8px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line2);}
+.mr:last-child{border-bottom:none;}
+.mr-n{font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);letter-spacing:1px;}
+.mr-d .main{font-size:13px;}
+.mr-d .sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);}
+.mr-p{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;text-align:right;}
+.mr-del{background:none;border:none;cursor:pointer;font-size:13px;color:var(--stone);transition:color .2s;}
+.mr-del:hover{color:var(--ink);}
+.empty{text-align:center;padding:70px 20px;}
+.ebig{font-family:'Playfair Display',serif;font-size:clamp(80px,18vw,140px);font-weight:900;color:var(--mist);line-height:1;}
+.etxt{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--fog);margin-top:10px;}
+@media(max-width:500px){
+  .rtable{grid-template-columns:repeat(4,1fr)}
+  .sr{grid-template-columns:38px 1fr 58px}.sr-pt{display:none}
+  .tehead{grid-template-columns:44px 1fr auto 16px}
+  .te-rk{font-size:28px}.te-rk.r1{font-size:32px}
+  .mgrid{grid-template-columns:1fr}
+  .mr{grid-template-columns:56px 1fr 40px 26px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">Free Fire · FFC Mode · OpenRouter AI</div>
+  <h1>Tournament<br><em>Score Tracker</em></h1>
+  <div class="mast-sub" id="mastSub">upload screenshot → ai baca otomatis → leaderboard live</div>
+</header>
+
+<div class="rules">
+  <div class="sec-lbl">Tabel Poin</div>
+  <div class="rtable" id="rt"></div>
+  <div class="knote">— <strong>1 Kill = 1 Poin</strong> — poin sama → kill lebih banyak menang</div>
+</div>
+
+<nav class="nav">
+  <button class="nb active" id="tabS" onclick="go('scan',this)">Scan SS</button>
+  <button class="nb" id="tabL" onclick="go('lb',this)">Leaderboard</button>
+</nav>
+
+<div class="page active" id="pageScan">
+  <div class="uzone" id="uz">
+    <span class="ui">◻</span>
+    <div class="ubig">Upload Screenshot</div>
+    <div class="usml">tap di sini atau drop gambar</div>
+    <input type="file" id="fi" accept="image/*">
+  </div>
+  <div class="ctrl">
+    <span class="clbl">Match</span>
+    <select id="mn">
+      <option value="1">Match 1</option><option value="2">Match 2</option>
+      <option value="3">Match 3</option><option value="4">Match 4</option>
+      <option value="5">Match 5</option><option value="6">Match 6</option>
+    </select>
+  </div>
+  <div class="errb" id="eb"></div>
+  <div class="rn" id="rn"></div>
+  <button class="btn" id="scanBtn" disabled onclick="doScan()">Scan &amp; Hitung Otomatis</button>
+  <div class="load" id="ld">
+    <div class="ltrack"><div class="lrun"></div></div>
+    <div class="ltxt" id="ltxt">OpenRouter AI membaca screenshot . . .</div>
+  </div>
+  <div class="aipanel" id="ap">
+    <div class="aihead">
+      <div class="aihead-t">Hasil Scan</div>
+      <div class="aihead-b" id="apb">Match 1</div>
+    </div>
+    <div id="aprows"></div>
+    <button class="btn-save" onclick="saveAll()">Simpan ke Leaderboard</button>
+  </div>
+  <hr>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--fog)">Mode Manual (backup)</span>
+    <button class="btn-sec" onclick="document.getElementById('ms').classList.toggle('show')">Buka / Tutup</button>
+  </div>
+  <div class="mansec" id="ms">
+    <div class="man-t">Input Manual</div>
+    <div class="man-s">Backup kalau AI tidak bisa baca screenshot</div>
+    <div class="mgrid">
+      <div class="fg"><label>Nama Tim</label><input type="text" id="mt" placeholder="Nama tim..."></div>
+      <div class="fg"><label>Placement</label>
+        <select id="mp" style="border-bottom:1px solid var(--line);padding:8px 4px;font-family:'DM Mono',monospace;font-size:12px">
+          <option value="1">Top 1 (+12)</option><option value="2">Top 2 (+9)</option>
+          <option value="3">Top 3 (+8)</option><option value="4">Top 4 (+7)</option>
+          <option value="5">Top 5 (+6)</option><option value="6">Top 6 (+5)</option>
+          <option value="7">Top 7 (+4)</option><option value="8">Top 8 (+3)</option>
+          <option value="9">Top 9 (+2)</option><option value="10">Top 10 (+1)</option>
+          <option value="11">Top 11 (+0)</option><option value="12">Top 12 (+0)</option>
+        </select>
+      </div>
+    </div>
+    <div class="mgrid">
+      <div class="fg"><label>Total Kill Tim</label><input type="number" id="mk" min="0" max="99" value="0"></div>
+      <div class="fg"><label>Match</label>
+        <select id="mm" style="border-bottom:1px solid var(--line);padding:8px 4px;font-family:'DM Mono',monospace;font-size:12px">
+          <option value="1">Match 1</option><option value="2">Match 2</option>
+          <option value="3">Match 3</option><option value="4">Match 4</option>
+          <option value="5">Match 5</option><option value="6">Match 6</option>
+        </select>
+      </div>
+    </div>
+    <div class="man-prev" id="mprev"></div>
+    <button class="btn-man" onclick="addMan()">Tambah Tim</button>
+  </div>
+</div>
+
+<div class="page" id="pageLB">
+  <div class="lbhead">
+    <div>
+      <div class="sec-lbl" style="margin-bottom:6px">Standings</div>
+      <div class="lbhead-t">Leaderboard</div>
+    </div>
+    <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);letter-spacing:2px" id="lbc"></div>
+      <button class="btn-sec" onclick="clearAll()">Reset Data</button>
+    </div>
+  </div>
+  <div id="lb"></div>
+</div>
+
+</div>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  API KEY DISIMPAN DI VERCEL ENVIRONMENT VARIABLES           ║
+// ║  Frontend ini TIDAK perlu API key sama sekali ✓             ║
+// ║  Semua request AI diproses lewat /api/scan (serverless)     ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const RETRY = 3;
+const PP = {1:12,2:9,3:8,4:7,5:6,6:5,7:4,8:3,9:2,10:1,11:0,12:0};
+let DB = JSON.parse(localStorage.getItem('ffdb') || '{}');
+let pending = null, b64 = null, selFile = null, curTab = 'scan';
+
+// Rules table
+const rt = document.getElementById('rt');
+for(let i=1;i<=12;i++){
+  const p=PP[i];
+  rt.innerHTML+=`<div class="rc"><div class="rc-t">T${i}</div><div class="rc-p${p===0?' z':''}">${p}</div></div>`;
+}
+
+// Upload
+const uz = document.getElementById('uz'), fi = document.getElementById('fi');
+uz.addEventListener('click', () => fi.click());
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('drag'));
+uz.addEventListener('drop', e => {
+  e.preventDefault(); uz.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('image/')) loadF(f);
+});
+fi.addEventListener('change', e => { if(e.target.files[0]) loadF(e.target.files[0]); });
+
+function loadF(f) {
+  selFile = f;
+  const r = new FileReader();
+  r.onload = e => {
+    b64 = e.target.result.split(',')[1];
+    uz.innerHTML = `<img src="${e.target.result}" class="previmg">`;
+    document.getElementById('scanBtn').disabled = false;
+    document.getElementById('ap').classList.remove('show');
+    hideErr();
+  };
+  r.readAsDataURL(f);
+}
+
+// Tab
+function go(tab, el) {
+  if(tab === curTab) return;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active','fl'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const pg = document.getElementById(tab === 'scan' ? 'pageScan' : 'pageLB');
+  pg.classList.add('active');
+  if(tab === 'scan') pg.classList.add('fl');
+  curTab = tab;
+  if(tab === 'lb') renderLB();
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ── SCAN ── memanggil /api/scan (Vercel serverless) bukan Gemini langsung
+async function doScan() {
+  if(!b64) { showErr('Upload screenshot dulu.'); return; }
+  hideErr();
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('ap').classList.remove('show');
+  const mn = parseInt(document.getElementById('mn').value);
+
+  const res = await callAPI(b64, selFile.type || 'image/jpeg', mn);
+  if(res.ok) { pending = res.data; renderScan(res.data, mn); }
+  else showErr(res.msg);
+
+  document.getElementById('scanBtn').disabled = false;
+  document.getElementById('ld').classList.remove('show');
+  document.getElementById('rn').classList.remove('show');
+}
+
+async function callAPI(img, mime, matchNum) {
+  for(let a = 0; a < RETRY; a++) {
+    document.getElementById('ld').classList.add('show');
+    document.getElementById('ltxt').textContent =
+      a === 0 ? 'OpenRouter AI membaca screenshot . . .' : `Mencoba ulang ${a}/${RETRY-1} . . .`;
+    try {
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: img, mime, matchNum })
+      });
+
+      // Rate limit dari server
+      if(res.status === 429) {
+        const d = await res.json().catch(() => ({}));
+        const wait = (d.retryAfter || 10) + (a * 3);
+        const rn = document.getElementById('rn');
+        for(let t = wait; t > 0; t--) {
+          rn.textContent = `Rate limit — tunggu ${t}s...`;
+          rn.classList.add('show');
+          await sleep(1000);
+        }
+        rn.classList.remove('show');
+        continue;
+      }
+
+      const d = await res.json();
+      if(!res.ok) return { ok: false, msg: d.msg || `Error ${res.status}` };
+      return d; // { ok, data } atau { ok: false, msg }
+
+    } catch(e) {
+      if(a === RETRY - 1) return { ok: false, msg: 'Koneksi gagal: ' + e.message };
+      await sleep(3000 * (a + 1));
+    }
+  }
+  return { ok: false, msg: 'Gagal setelah beberapa percobaan. Gunakan Mode Manual.' };
+}
+
+function renderScan(json, mn) {
+  document.getElementById('apb').textContent = 'Match ' + mn;
+  document.getElementById('aprows').innerHTML = json.teams.map(t => `
+    <div class="sr">
+      <div class="sr-pl${t.placement <= 3 ? ' top' : ''}">${t.placement}</div>
+      <div><div class="sr-name">${t.teamName}</div><div class="sr-mem">${(t.members||[]).slice(0,4).join(' · ') || '—'}</div></div>
+      <div class="sr-kl"><strong>${t.kills}</strong>kill +${t.killPts}pt</div>
+      <div class="sr-pt">${t.totalPts}<small>poin</small></div>
+    </div>`).join('');
+  document.getElementById('ap').classList.add('show');
+  document.getElementById('ap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function saveAll() {
+  if(!pending) return;
+  const mn = pending.match;
+  pending.teams.forEach(t => {
+    const k = t.teamName;
+    if(!DB[k]) DB[k] = [];
+    DB[k] = DB[k].filter(m => m.match !== mn);
+    DB[k].push({ match:mn, placement:t.placement, kills:t.kills, placementPts:t.placementPts, killPts:t.killPts, total:t.totalPts, members:t.members||[] });
+    DB[k].sort((a,b) => a.match - b.match);
+  });
+  save(); pending = null;
+  document.getElementById('ap').classList.remove('show');
+  uz.innerHTML = `<span class="ui">◻</span><div class="ubig">Upload Screenshot</div><div class="usml">tap di sini atau drop gambar</div>`;
+  fi.value = ''; selFile = null; b64 = null;
+  document.getElementById('scanBtn').disabled = true;
+  go('lb', document.getElementById('tabL'));
+}
+
+// Manual
+function updPrev() {
+  const p = parseInt(document.getElementById('mp').value) || 1;
+  const k = parseInt(document.getElementById('mk').value) || 0;
+  document.getElementById('mprev').textContent =
+    `Placement +${PP[p]??0}  ·  Kill +${k}  ·  Total = ${(PP[p]??0)+k} poin`;
+}
+document.getElementById('mp').addEventListener('change', updPrev);
+document.getElementById('mk').addEventListener('input', updPrev);
+updPrev();
+
+function addMan() {
+  const name = document.getElementById('mt').value.trim();
+  if(!name) { alert('Masukkan nama tim!'); return; }
+  const p = parseInt(document.getElementById('mp').value);
+  const k = parseInt(document.getElementById('mk').value) || 0;
+  const mn = parseInt(document.getElementById('mm').value);
+  const pp = PP[p] ?? 0;
+  if(!DB[name]) DB[name] = [];
+  DB[name] = DB[name].filter(m => m.match !== mn);
+  DB[name].push({ match:mn, placement:p, kills:k, placementPts:pp, killPts:k, total:pp+k, members:[] });
+  DB[name].sort((a,b) => a.match - b.match);
+  save();
+  document.getElementById('mt').value = '';
+  document.getElementById('mk').value = 0;
+  updPrev();
+  const btn = document.querySelector('.btn-man'), o = btn.textContent;
+  btn.textContent = '✓ Tersimpan!';
+  setTimeout(() => { btn.textContent = o; }, 1200);
+}
+
+// LB
+const gT = ms => ms.reduce((s,m) => s + m.total, 0);
+const gK = ms => ms.reduce((s,m) => s + m.kills, 0);
+
+function renderLB() {
+  const lb = document.getElementById('lb'), teams = Object.keys(DB);
+  document.getElementById('lbc').textContent = teams.length + ' TIM';
+  if(!teams.length) {
+    lb.innerHTML = `<div class="empty"><div class="ebig">0</div><div class="etxt">Belum ada data — scan atau input manual dulu</div></div>`;
+    return;
+  }
+  const sorted = [...teams].sort((a,b) => {
+    const d = gT(DB[b]) - gT(DB[a]);
+    return d !== 0 ? d : gK(DB[b]) - gK(DB[a]);
+  });
+  lb.innerHTML = sorted.map((team,i) => {
+    const rank = i+1, ms = DB[team], tp = gT(ms), tk = gK(ms);
+    const rc = rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+    const rows = ms.map(m => `
+      <div class="mr">
+        <div class="mr-n">Match ${m.match}</div>
+        <div class="mr-d"><div class="main">Top ${m.placement} · ${m.kills} Kill</div><div class="sub">+${m.placementPts} placement · +${m.killPts} kill</div></div>
+        <div class="mr-p">+${m.total}</div>
+        <button class="mr-del" onclick="delM('${team.replace(/'/g,"\\'")}',${m.match})">×</button>
+      </div>`).join('');
+    return `<div class="tent">
+      <div class="tehead" onclick="tog(this)">
+        <div class="te-rk ${rc}">${String(rank).padStart(2,'0')}</div>
+        <div class="te-inf"><div class="te-nm">${team}</div><div class="te-sb">${ms.length} match · ${tk} kill</div></div>
+        <div class="te-sc"><div class="big">${tp}</div><div class="lbl">poin</div></div>
+        <div class="tearr">▾</div>
+      </div>
+      <div class="tebody">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
+function tog(h) {
+  const b = h.nextElementSibling, a = h.querySelector('.tearr');
+  const o = b.classList.contains('open');
+  b.classList.toggle('open', !o);
+  a.classList.toggle('open', !o);
+}
+function delM(team, mn) {
+  if(!DB[team]) return;
+  DB[team] = DB[team].filter(m => m.match !== mn);
+  if(!DB[team].length) delete DB[team];
+  save(); renderLB();
+}
+function clearAll() { if(!confirm('Reset semua data?')) return; DB = {}; save(); renderLB(); }
+function save() { localStorage.setItem('ffdb', JSON.stringify(DB)); }
+function showErr(m) { const b = document.getElementById('eb'); b.textContent = m; b.classList.add('show'); }
+function hideErr() { document.getElementById('eb').classList.remove('show'); }
+
+renderLB();
+</script>
+</body>
+</html>
