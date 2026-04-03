@@ -34,11 +34,11 @@ BALAS HANYA JSON ini tanpa teks apapun:
 
 Kalau tidak bisa baca: {"match":${matchNum},"error":"alasan"}`;
 
-  // Coba beberapa model gratis OpenRouter sebagai fallback
+  // Model gratis OpenRouter yang aktif 2026
   const models = [
     'google/gemini-2.0-flash-exp:free',
     'meta-llama/llama-4-scout:free',
-    'google/gemini-flash-1.5:free'
+    'meta-llama/llama-4-maverick:free'
   ];
 
   let lastError = '';
@@ -50,7 +50,7 @@ Kalau tidak bisa baca: {"match":${matchNum},"error":"alasan"}`;
         headers: {
           'Authorization': `Bearer ${APIKEY}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://ff-tournament.vercel.app',
+          'HTTP-Referer': 'https://freeefire-ft.vercel.app',
           'X-Title': 'FF Tournament Score'
         },
         body: JSON.stringify({
@@ -71,6 +71,11 @@ Kalau tidak bisa baca: {"match":${matchNum},"error":"alasan"}`;
           max_tokens: 2000
         })
       });
+
+      if (response.status === 404) {
+        lastError = `Model ${model} tidak tersedia`;
+        continue;
+      }
 
       if (response.status === 429) {
         lastError = `Rate limit model ${model}`;
@@ -121,6 +126,6 @@ Kalau tidak bisa baca: {"match":${matchNum},"error":"alasan"}`;
 
   return res.status(500).json({
     ok: false,
-    msg: `Semua model gagal. Error terakhir: ${lastError}. Gunakan input manual.`
+    msg: `Semua model gagal. Error: ${lastError}`
   });
 }
