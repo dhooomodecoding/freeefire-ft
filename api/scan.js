@@ -1,6 +1,7 @@
 // api/scan.js — Vercel Serverless Function
-// Pakai OpenRouter (GRATIS!) — daftar di openrouter.ai
-// Simpan API Key di Vercel Environment Variables: OPENROUTER_API_KEY
+// Pakai Google Gemini (GRATIS 1500x/hari)
+// Daftar API key gratis di: aistudio.google.com
+// Simpan di Vercel Environment Variables: GEMINI_API_KEY
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,14 +11,14 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const APIKEY = process.env.OPENROUTER_API_KEY;
+  const APIKEY = process.env.GEMINI_API_KEY;
   if (!APIKEY) {
-    return res.status(500).json({ ok: false, msg: 'OPENROUTER_API_KEY belum di-set di Vercel Environment Variables.' });
+    return res.status(500).json({ ok: false, msg: 'GEMINI_API_KEY belum di-set di Vercel. Buka Settings > Environment Variables.' });
   }
 
   const { image, mime, matchNum } = req.body;
   if (!image || !matchNum) {
-    return res.status(400).json({ ok: false, msg: 'Data tidak lengkap (image, matchNum).' });
+    return res.status(400).json({ ok: false, msg: 'Data tidak lengkap.' });
   }
 
   const prompt = `Kamu ahli baca screenshot Free Fire. Screenshot ini mungkin foto layar HP/monitor, bisa agak blur.
@@ -34,52 +35,47 @@ BALAS HANYA JSON ini tanpa teks apapun:
 
 Kalau tidak bisa baca: {"match":${matchNum},"error":"alasan"}`;
 
-  // Model gratis OpenRouter yang aktif 2026
+  // Coba 2 model Gemini gratis sebagai fallback
   const models = [
-    'google/gemini-2.0-flash-exp:free',
-    'meta-llama/llama-4-scout:free',
-    'meta-llama/llama-4-maverick:free'
+    'gemini-2.0-flash',
+    'gemini-1.5-flash'
   ];
 
   let lastError = '';
 
   for (const model of models) {
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${APIKEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://freeefire-ft.vercel.app',
-          'X-Title': 'FF Tournament Score'
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'image_url',
-                  image_url: { url: `data:${mime || 'image/jpeg'};base64,${image}` }
-                },
-                { type: 'text', text: prompt }
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${APIKEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { inline_data: { mime_type: mime || 'image/jpeg', data: image } },
+                { text: prompt }
               ]
-            }
-          ],
-          temperature: 0.1,
-          max_tokens: 2000
-        })
-      });
+            }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 2000 }
+          })
+        }
+      );
 
-      if (response.status === 404) {
-        lastError = `Model ${model} tidak tersedia`;
+      if (response.status === 429) {
+        lastError = `Rate limit model ${model}, coba lagi sebentar`;
         continue;
       }
 
-      if (response.status === 429) {
-        lastError = `Rate limit model ${model}`;
-        continue;
+      if (response.status === 400) {
+        const e = await response.json().catch(() => ({}));
+        lastError = `API Key tidak valid: ${e?.error?.message || ''}`;
+        break; // key salah, tidak perlu coba model lain
+      }
+
+      if (response.status === 403) {
+        lastError = 'API Key tidak punya akses. Pastikan Gemini API sudah di-enable di aistudio.google.com';
+        break;
       }
 
       if (!response.ok) {
@@ -89,14 +85,14 @@ Kalau tidak bisa baca: {"match":${matchNum},"error":"alasan"}`;
       }
 
       const d = await response.json();
-      const raw = d?.choices?.[0]?.message?.content || '';
+      const raw = d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const clean = raw.replace(/```json|```/g, '').trim();
 
       let json;
       try {
         json = JSON.parse(clean);
       } catch {
-        lastError = `Model ${model} gagal parse JSON`;
+        lastError = `Model ${model} gagal parse JSON, coba screenshot lebih jelas`;
         continue;
       }
 
@@ -105,7 +101,7 @@ Kalau tidak bisa baca: {"match":${matchNum},"error":"alasan"}`;
       }
 
       if (!json.teams?.length) {
-        lastError = `Model ${model}: Tidak ada tim terbaca`;
+        lastError = `Tidak ada tim terbaca. Pastikan ini screenshot leaderboard FF`;
         continue;
       }
 
@@ -119,13 +115,10 @@ Kalau tidak bisa baca: {"match":${matchNum},"error":"alasan"}`;
       return res.status(200).json({ ok: true, data: json, modelUsed: model });
 
     } catch (e) {
-      lastError = `Model ${model} koneksi error: ${e.message}`;
+      lastError = `Koneksi error: ${e.message}`;
       continue;
     }
   }
 
-  return res.status(500).json({
-    ok: false,
-    msg: `Semua model gagal. Error: ${lastError}`
-  });
+  return res.status(500).json({ ok: false, msg: lastError });
 }
